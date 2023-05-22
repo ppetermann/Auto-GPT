@@ -226,12 +226,21 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
                         continue
                     a_module = getattr(zipped_module, key)
                     a_keys = dir(a_module)
+
+                    is_plugin = False
+                    if "_abc_impl" in a_keys:
+                        for base in a_module.__bases__:
+                            if base.__name__ == "AutoGPTPluginTemplate":
+                                is_plugin = True
+                                break
+
                     if (
-                        "_abc_impl" in a_keys
+                        is_plugin
                         and a_module.__name__ != "AutoGPTPluginTemplate"
                         and denylist_allowlist_check(a_module.__name__, cfg)
                     ):
                         loaded_plugins.append(a_module())
+
     # OpenAI plugins
     if cfg.plugins_openai:
         manifests_specs = fetch_openai_plugins_manifest_and_spec(cfg)
